@@ -1,6 +1,6 @@
 {
   "name": "openclaw-tinyfish",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "type": "module",
   "description": "Independent native TinyFish search and fetch providers for OpenClaw",
   "author": "codefriendly",

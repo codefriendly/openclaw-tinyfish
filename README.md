@@ -27,7 +27,7 @@ openclaw plugins install openclaw-tinyfish
 To install a specific version:
 
 ```sh
-openclaw plugins install openclaw-tinyfish@0.9.0
+openclaw plugins install openclaw-tinyfish@0.9.1
 ```
 
 Review any installation warnings. Follow the installer’s runtime-application result to confirm that the Gateway loaded the plugin.

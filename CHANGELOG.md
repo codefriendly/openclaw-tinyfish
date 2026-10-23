@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.1 — 2026-10-23
+
+- Add tag-based npm publishing with GitHub Actions and OIDC authentication.
+- Document the release approval gate and npm trusted publisher setup.
+- Keep plugin runtime behavior unchanged from 0.9.0.
+
 ## 0.9.0 — 2026-10-23
 
 - Fail closed when an authoritative runtime credential snapshot is absent or revoked.
