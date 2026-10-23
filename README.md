@@ -40,17 +40,25 @@ In the OpenClaw Control UI, open **Settings → Secrets**. Store a protected sec
 - `api.search.tinyfish.ai`
 - `api.fetch.tinyfish.ai`
 
-Alternatively, ask your OpenClaw assistant to request the key through its masked credential prompt. Never paste the key into a chat message or put it in a command.
+For command-line setup, run:
+
+```sh
+openclaw secrets store set TINYFISH_API_KEY --kind secret \
+  --allow-host api.search.tinyfish.ai \
+  --allow-host api.fetch.tinyfish.ai
+```
+
+Enter the key at the no-echo prompt. Do not add the key to the command.
+
+You can also ask your OpenClaw assistant to request the key through its masked credential prompt. Choose one entry method; you do not need to store the key more than once. Never paste the key into a chat message.
 
 ### 2. Select TinyFish
 
-TinyFish appears in the native provider picker:
+Choose one configuration method. Do not run both.
 
-```sh
-openclaw configure --section web
-```
+#### Option A: use the stored SecretRef (recommended)
 
-To configure an existing protected secret directly, save the following as `tinyfish.patch.json`. This merge patch preserves unrelated settings:
+Save the following as `tinyfish.patch.json`. It contains a reference to the stored key, not the key itself. This merge patch preserves unrelated settings:
 
 ```json
 {
@@ -85,6 +93,14 @@ Use the exact SecretRef returned by your store if its provider alias or entry na
 openclaw config patch --file tinyfish.patch.json --dry-run --json
 openclaw config patch --file tinyfish.patch.json
 ```
+
+#### Option B: use the provider wizard
+
+```sh
+openclaw configure --section web
+```
+
+Select TinyFish and follow the credential prompts. The wizard may request a key instead of reusing an existing store reference. To preserve the protected-store setup, cancel in that case and use Option A.
 
 Installation alone does not select TinyFish. If Codex’s separate search route is enabled, disable `tools.web.search.openaiCodex.enabled` when you want configured native search to use TinyFish. Preserve unrelated settings.
 
