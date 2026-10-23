@@ -158,6 +158,8 @@ npm pack --dry-run
 
 The host fixtures use temporary configuration and synthetic credentials. HTTP is mocked and socket connections are denied. They target build-specific internal OpenClaw modules. Update the fixtures when those module names change. Unit tests do not prove live API access.
 
+For GitHub Actions releases, see the [publishing guide](docs/publishing.md).
+
 ## Remove
 
 ```sh
