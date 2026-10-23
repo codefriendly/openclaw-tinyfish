@@ -5,6 +5,7 @@ Use TinyFish to search the web and extract readable content, including JavaScrip
 ## Features
 
 - **Native search:** select TinyFish as the backend for OpenClaw’s `web_search`.
+- **Automatic fetch fallback:** let OpenClaw try local page extraction first, then use TinyFish if it fails.
 - **Advanced search:** use `tinyfish_search` for news, research papers, filters, and additional result metadata.
 - **Page extraction:** use `tinyfish_fetch` for 1–10 public URLs, with a shared output budget and a separate result for each URL.
 - **Highlights:** use `tinyfish_highlights` for question-focused passages when your account has access. Disabled by default.
@@ -31,16 +32,13 @@ openclaw plugins install openclaw-tinyfish@0.9.0
 
 Review any installation warnings. Follow the installer’s runtime-application result to confirm that the Gateway loaded the plugin.
 
-## Configure search
+## Configure search and fetch
 
-### 1. Store the key securely
+Save your API key, enable TinyFish search and fetch fallback, then try them. You only need to do this once. API calls may incur charges.
 
-In the OpenClaw Control UI, open **Settings → Secrets**. Store a protected secret named `TINYFISH_API_KEY`. Allow only these API hosts:
+### 1. Save your API key
 
-- `api.search.tinyfish.ai`
-- `api.fetch.tinyfish.ai`
-
-For command-line setup, run the command exactly as shown. `TINYFISH_API_KEY` is the name used to store your key. It is not a placeholder. Do not replace it with your API key.
+Run this command on the Gateway host as shown. `TINYFISH_API_KEY` is the name for the saved key; you will enter the key at the prompt.
 
 ```sh
 openclaw secrets store set TINYFISH_API_KEY --kind secret \
@@ -48,65 +46,41 @@ openclaw secrets store set TINYFISH_API_KEY --kind secret \
   --allow-host api.fetch.tinyfish.ai
 ```
 
-When prompted, paste your actual TinyFish API key and press Enter. The input is hidden. The key does not appear in the command or shell history.
+Paste your TinyFish API key at the hidden prompt and press Enter. OpenClaw stores it securely and limits its use to the two TinyFish API hosts.
 
-You can also ask your OpenClaw assistant to request the key through its masked credential prompt. Choose one entry method; you do not need to store the key more than once. Never paste the key into a chat message.
+**Paste the key only at the hidden prompt, not into the command or a chat message.**
 
-### 2. Select TinyFish
+### 2. Enable search and fetch fallback
 
-Choose one configuration method. Do not run both.
-
-#### Option A: use the stored SecretRef (recommended)
-
-Save the following as `tinyfish.patch.json`. It contains a reference to the stored key, not the key itself. This merge patch preserves unrelated settings:
-
-```json
-{
-  "plugins": {
-    "entries": {
-      "tinyfish": {
-        "enabled": true,
-        "config": {
-          "apiKey": {
-            "source": "store",
-            "provider": "default",
-            "id": "TINYFISH_API_KEY"
-          }
-        }
-      }
-    }
-  },
-  "tools": {
-    "web": {
-      "search": {
-        "enabled": true,
-        "provider": "tinyfish"
-      }
-    }
-  }
-}
-```
-
-Use the exact SecretRef returned by your store if its provider alias or entry name differs. Validate the patch before applying it:
+Run these commands as shown. They connect the plugin to your saved key, select TinyFish for search, and enable automatic fetch fallback. You do not need to enter the key again or edit a configuration file.
 
 ```sh
-openclaw config patch --file tinyfish.patch.json --dry-run --json
-openclaw config patch --file tinyfish.patch.json
+openclaw config set plugins.entries.tinyfish.config.apiKey \
+  --ref-source store --ref-provider default --ref-id TINYFISH_API_KEY
+
+openclaw config set plugins.entries.tinyfish.enabled true
+openclaw config set tools.web.search.enabled true
+openclaw config set tools.web.search.provider tinyfish
+
+openclaw config set plugins.entries.tinyfish.config.enableNativeFetch true
+openclaw config set tools.web.fetch.enabled true
+openclaw config set tools.web.fetch.cacheTtlMinutes 0
+openclaw config set tools.web.fetch.provider tinyfish
 ```
 
-#### Option B: use the provider wizard
+The fetch cache is disabled because OpenClaw does not keep separate native fetch caches for different credentials. These commands preserve settings outside the paths shown above. If OpenClaw reports that a Gateway restart is needed, follow that instruction before testing.
 
-```sh
-openclaw configure --section web
-```
+### 3. Test search and page extraction
 
-Select TinyFish and follow the credential prompts. The wizard may request a key instead of reusing an existing store reference. To preserve the protected-store setup, cancel in that case and use Option A.
+Ask your OpenClaw assistant:
 
-Installation alone does not select TinyFish. If Codex’s separate search route is enabled, disable `tools.web.search.openaiCodex.enabled` when you want configured native search to use TinyFish. Preserve unrelated settings.
+> Use web_search to search for TinyFish and return one result. Tell me which provider handled the search.
 
-### 3. Verify the route
+Check that the tool result reports `provider: "tinyfish"`. To test TinyFish page extraction directly:
 
-Ask your assistant to run `web_search` with one result. Confirm that the tool reports `provider: "tinyfish"`. Then ask it to extract a public page with `tinyfish_fetch`.
+> Use tinyfish_fetch to extract https://example.com. Limit the text to 2000 characters.
+
+This names the tool to verify TinyFish itself. For normal use, you can simply ask the assistant to read a page.
 
 ## Usage
 
@@ -114,7 +88,7 @@ Ask your assistant, for example:
 
 > Search for recent battery recycling research. Use TinyFish research-paper search and return three results.
 
-> Extract these two public pages with tinyfish_fetch. Limit their combined text to 6000 characters.
+> Read these two public pages and summarize their main points.
 
 The assistant can pass arguments such as:
 
@@ -128,11 +102,29 @@ The assistant can pass arguments such as:
 
 See the [tool reference](docs/tools.md) for advanced inputs and output limits.
 
+### How page fetching works
+
+With the setup above, OpenClaw’s `web_fetch` first requests the page and tries local extraction. It uses TinyFish as a fallback when its own fetch or extraction fails. Simple pages may not need a TinyFish API call.
+
+Local extraction can also return incomplete content without reporting a failure. If a page needs JavaScript rendering, or you want TinyFish batch extraction, ask for TinyFish explicitly:
+
+> Use tinyfish_fetch to extract these two pages. Limit their combined text to 6000 characters.
+
+Selecting TinyFish as the fetch provider does not send every page through TinyFish. Even with Readability disabled, OpenClaw can still return Markdown or JSON without calling the provider.
+
+## Other setup methods
+
+The steps above are the recommended path. If you completed them, you do not need these alternatives.
+
+**Control UI:** instead of step 1, open **Settings → Secrets** in OpenClaw. Save a protected secret named `TINYFISH_API_KEY`. Allow `api.search.tinyfish.ai` and `api.fetch.tinyfish.ai`. Then continue with step 2.
+
+**Assistant:** instead of step 1, ask your OpenClaw assistant to request the key through its masked credential prompt and save it as a protected secret with the same name and allowed hosts. Enter the key only in that prompt, not in chat. Then continue with step 2.
+
+**Provider wizard:** OpenClaw also provides `openclaw configure --section web`. Select TinyFish and follow the prompts. The wizard may request a key instead of using the one you saved. If you want to keep using the protected secret store, cancel that prompt and use step 2 above.
+
 ## Optional features
 
 **Highlights:** requires account access. Set `plugins.entries.tinyfish.config.enableHighlights` to `true` to enable `tinyfish_highlights`. If the API refuses access, disable the option and check your TinyFish account permissions.
-
-**Native fetch:** disabled by default. Prefer `tinyfish_fetch` for explicit TinyFish extraction. Opt-in native registration requires `enableNativeFetch: true` and `tools.web.fetch.provider: "tinyfish"`. Set `tools.web.fetch.cacheTtlMinutes` to `0`: the host fetch cache is not credential-partitioned. Native `web_fetch` can perform an initial GET and local extraction before provider delegation. Disabling Readability does not force every request through TinyFish.
 
 ## Limits and security
 
@@ -145,6 +137,7 @@ See the [tool reference](docs/tools.md) for advanced inputs and output limits.
 
 ## Troubleshooting
 
+- **Search uses Codex instead of TinyFish:** Codex has a separate search route. Disable `tools.web.search.openaiCodex.enabled` to use the TinyFish provider selected in step 2. Preserve unrelated settings.
 - **`missing_api_key` or `unresolved_secret`:** check the shared plugin SecretRef, then run `openclaw secrets reload`. Check that the Gateway has loaded the resolved credential. Do not replace the reference with a plaintext key.
 - **TinyFish missing from native provider discovery:** inspect the plugin’s enabled and loaded state. If a plugin reload does not refresh discovery, a Gateway restart may be needed.
 - **Tool unavailable in a sandbox:** use an authorized non-sandboxed session. Do not bypass host policy.

@@ -98,8 +98,8 @@ export class Client {
       integer(this.options.timeoutMs ?? 30000, "timeoutMs", 1, 150000),
     );
     const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
-    combined.throwIfAborted();
     try {
+      combined.throwIfAborted();
       const value = await run(combined);
       combined.throwIfAborted();
       return value;
@@ -186,7 +186,17 @@ export class Client {
       );
     }
     // Provider-controlled successful fields must not reflect this credential either.
-    const serialized = JSON.stringify(res.data).split(key).join("[REDACTED]");
+    const serialized = JSON.stringify(res.data, (_name, value: unknown) => {
+      if (typeof value === "string") return value.split(key).join("[REDACTED]");
+      if (value && typeof value === "object" && !Array.isArray(value))
+        return Object.fromEntries(
+          Object.entries(value).map(([name, child]) => [
+            name.split(key).join("[REDACTED]"),
+            child,
+          ]),
+        );
+      return value;
+    });
     return record(JSON.parse(serialized));
   }
   async search(args: Params, signal?: AbortSignal) {

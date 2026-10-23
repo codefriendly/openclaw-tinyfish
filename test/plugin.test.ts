@@ -5,6 +5,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import Ajv from "ajv";
 import {
   Client,
+  TinyFishError,
   cacheIdentity,
   publicUrlSyntax,
   type Dependencies,
@@ -260,8 +261,15 @@ test("cancellation before request and cached result", async () => {
   const f = fixture({ results: [] }, { cacheTtlMs: 1000 });
   await f.client.search({ query: "q" });
   const a = new AbortController();
-  a.abort();
-  await assert.rejects(f.client.search({ query: "q" }, a.signal));
+  a.abort(new Error("private abort reason"));
+  for (const query of ["q", "uncached"])
+    await assert.rejects(
+      f.client.search({ query }, a.signal),
+      (e: unknown) =>
+        e instanceof TinyFishError &&
+        e.code === "cancelled" &&
+        e.message === "TinyFish cancelled",
+    );
   assert.equal(f.calls.length, 1);
 });
 test("timeout and in-flight cancellation", async () => {
@@ -274,10 +282,14 @@ test("timeout and in-flight cancellation", async () => {
     const a = new AbortController();
     const keep = setTimeout(() => {}, 100);
     const pending = f.client.search({ query: "q" }, a.signal);
-    if (cancelled) a.abort();
+    if (cancelled) a.abort(new Error("private abort reason"));
+    const code = cancelled ? "cancelled" : "timeout";
     await assert.rejects(
       pending,
-      new RegExp(cancelled ? "cancelled" : "timeout"),
+      (e: unknown) =>
+        e instanceof TinyFishError &&
+        e.code === code &&
+        e.message === "TinyFish " + code,
     );
     clearTimeout(keep);
   }

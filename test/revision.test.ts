@@ -169,6 +169,52 @@ test("complete search metadata is bounded, absent omitted, credential reflection
   );
   assert(!new Ajv().compile(searchSchema)({ query: "q", page: 11 }));
 });
+test("credential redaction handles JSON escaping in values and metadata keys", async () => {
+  for (const key of ["fixture-key", 'key"with-quote', "key\\with-slash"]) {
+    const document = {
+      [key]: ["before " + key + " after " + key, { count: 3, ready: true }],
+      unchanged: 'Quote " and backslash \\',
+    };
+    const f = fixture({
+      results: [
+        {
+          url: urls[0],
+          title: key,
+          snippet: "before " + key + " after " + key,
+          authors: [key],
+          text: document,
+          page_metadata: document,
+        },
+      ],
+      errors: [],
+    });
+    const client = new Client({ apiKey: key }, f.deps);
+    const search = await client.search({ query: "q" });
+    assert.equal(search.results[0].title, "[REDACTED]");
+    assert.equal(
+      search.results[0].snippet,
+      "before [REDACTED] after [REDACTED]",
+    );
+    assert.deepEqual(search.results[0].authors, ["[REDACTED]"]);
+    const fetched = await client.fetchBatch({
+      urls: [urls[0]],
+      format: "json",
+    });
+    assert.equal(fetched.results[0].state, "success");
+    const expected = {
+      "[REDACTED]": [
+        "before [REDACTED] after [REDACTED]",
+        { count: 3, ready: true },
+      ],
+      unchanged: 'Quote " and backslash \\',
+    };
+    assert.deepEqual(JSON.parse(String(fetched.results[0].text)), expected);
+    assert.deepEqual(
+      JSON.parse(String(fetched.results[0].page_metadata)),
+      expected,
+    );
+  }
+});
 test("registration defaults, sandbox denial, wrapping all metadata, shared credential", async () => {
   const f = fixture({
     results: [
