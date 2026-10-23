@@ -40,7 +40,7 @@ In the OpenClaw Control UI, open **Settings → Secrets**. Store a protected sec
 - `api.search.tinyfish.ai`
 - `api.fetch.tinyfish.ai`
 
-For command-line setup, run:
+For command-line setup, run the command exactly as shown. `TINYFISH_API_KEY` is the name used to store your key. It is not a placeholder. Do not replace it with your API key.
 
 ```sh
 openclaw secrets store set TINYFISH_API_KEY --kind secret \
@@ -48,7 +48,7 @@ openclaw secrets store set TINYFISH_API_KEY --kind secret \
   --allow-host api.fetch.tinyfish.ai
 ```
 
-Enter the key at the no-echo prompt. Do not add the key to the command.
+When prompted, paste your actual TinyFish API key and press Enter. The input is hidden. The key does not appear in the command or shell history.
 
 You can also ask your OpenClaw assistant to request the key through its masked credential prompt. Choose one entry method; you do not need to store the key more than once. Never paste the key into a chat message.
 
