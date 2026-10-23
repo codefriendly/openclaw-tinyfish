@@ -1,0 +1,58 @@
+{
+  "name": "openclaw-tinyfish",
+  "version": "0.9.0",
+  "type": "module",
+  "description": "Independent native TinyFish search and fetch providers for OpenClaw",
+  "author": "codefriendly",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "openclaw.plugin.json",
+    "README.md",
+    "CHANGELOG.md",
+    "docs"
+  ],
+  "main": "dist/index.js",
+  "openclaw": {
+    "extensions": [
+      "./dist/index.js"
+    ],
+    "compat": {
+      "pluginApi": "2026.10.5",
+      "minGatewayVersion": "2026.10.5"
+    },
+    "build": {
+      "openclawVersion": "2026.10.5",
+      "pluginSdkVersion": "2026.10.5"
+    }
+  },
+  "peerDependencies": {
+    "openclaw": "2026.10.5"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "test": "node --import tsx --test test/*.test.ts",
+    "test:host": "node test/host-fixture.mjs && node test/secrets-host-fixture.mjs",
+    "format": "prettier --write \"src/*.ts\" \"test/*.{ts,mjs}\"",
+    "format:check": "prettier --check \"src/*.ts\" \"test/*.{ts,mjs}\""
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "ajv": "^8.17.1",
+    "prettier": "^3.9.10",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=24.16.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codefriendly/openclaw-tinyfish.git"
+  },
+  "homepage": "https://github.com/codefriendly/openclaw-tinyfish#readme",
+  "bugs": {
+    "url": "https://github.com/codefriendly/openclaw-tinyfish/issues"
+  }
+}

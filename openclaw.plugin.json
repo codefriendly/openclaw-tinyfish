@@ -1,0 +1,96 @@
+{
+  "id": "tinyfish",
+  "name": "TinyFish",
+  "description": "Direct TinyFish Search and Fetch API providers",
+  "categories": ["web"],
+  "contracts": {
+    "webSearchProviders": ["tinyfish"],
+    "webFetchProviders": ["tinyfish"],
+    "tools": ["tinyfish_search", "tinyfish_fetch", "tinyfish_highlights"]
+  },
+  "activation": {
+    "onStartup": true
+  },
+  "configContracts": {
+    "secretInputs": {
+      "paths": [
+        {
+          "path": "apiKey",
+          "expected": "string",
+          "ownerKind": "capability"
+        }
+      ]
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "apiKey": {
+        "anyOf": [
+          {
+            "type": "string",
+            "minLength": 1
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source", "provider", "id"],
+            "properties": {
+              "source": {
+                "type": "string",
+                "enum": ["env", "file", "exec", "store"]
+              },
+              "provider": {
+                "type": "string",
+                "minLength": 1
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        ]
+      },
+      "enableHighlights": {
+        "type": "boolean",
+        "default": false
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 150000,
+        "default": 30000
+      },
+      "maxResponseBytes": {
+        "type": "integer",
+        "minimum": 1024,
+        "maximum": 2000000,
+        "default": 750000
+      },
+      "enableNativeFetch": {
+        "type": "boolean",
+        "default": false
+      },
+      "cacheTtlMs": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 900000,
+        "default": 0
+      }
+    }
+  },
+  "uiHints": {
+    "apiKey": {
+      "label": "Shared TinyFish API key",
+      "sensitive": true
+    },
+    "enableHighlights": {
+      "label": "Enable beta highlights (may require account access)"
+    },
+    "enableNativeFetch": {
+      "label": "Register native fetch provider (opt-in; host restrictions apply)"
+    }
+  }
+}
